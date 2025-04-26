@@ -1,16 +1,244 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход | Книжные рецензии</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --error-color: #e74a3b;
+        }
+        .auth-container {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #f8f9fc 0%, #e9ecef 100%);
+        }
+        .auth-card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+        }
+        .auth-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+        }
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.875rem;
+            display: none;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .social-login .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .social-icon {
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+    </style>
 </head>
 <body>
-<h1>Вход</h1>
-<form action="/login" method="post">
-    <input type="text" name="username" placeholder="имя пользователя" required><br>
-     <input type="password" name="password" placeholder="пароль" required><br>
-    <button type="submit">Войти</button>
-</form>
-<a href='/'>Назад</a>
+    <div class="auth-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="auth-card">
+                        <div class="auth-header">
+                            <h2><i class="fas fa-book-open"></i> Книжные рецензии</h2>
+                            <p class="mb-0">Войдите в свой аккаунт</p>
+                        </div>
+                        <div class="card-body p-4">
+                            <form id="loginForm" novalidate>
+                                <div class="mb-3">
+                                    <label for="loginEmail" class="form-label">Email или имя пользователя</label>
+                                    <input type="text" class="form-control" id="loginEmail" name="loginEmail" required>
+                                    <div class="error-message" id="emailError"></div>
+                                </div>
+                                <div class="mb-3 position-relative">
+                                    <label for="loginPassword" class="form-label">Пароль</label>
+                                    <input type="password" class="form-control" id="loginPassword" name="loginPassword" required>
+                                    <span class="password-toggle" id="togglePassword">
+                                        <i class="far fa-eye"></i>
+                                    </span>
+                                    <div class="error-message" id="passwordError"></div>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                                        <label class="form-check-label" for="rememberMe">Запомнить меня</label>
+                                    </div>
+                                    <a href="/password-reset" class="text-primary">Забыли пароль?</a>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 py-2 mb-3" id="loginBtn">
+                                    <span id="loginText">Войти</span>
+                                    <span id="loginSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                </button>
+
+                                <div class="text-center mb-3">
+                                    <span class="text-muted">Или войдите через</span>
+                                </div>
+
+                                <div class="row g-2 social-login mb-3">
+                                    <div class="col-6">
+                                        <button type="button" class="btn btn-outline-primary w-100">
+                                            <i class="fab fa-google social-icon"></i> Google
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button type="button" class="btn btn-outline-dark w-100">
+                                            <i class="fab fa-github social-icon"></i> GitHub
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="text-center mt-3">
+                                    <p class="mb-0">Нет аккаунта? <a href="/register" class="text-primary">Зарегистрируйтесь</a></p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Переключение видимости пароля
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('loginPassword');
+
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.innerHTML = type === 'password' ? '<i class="far fa-eye"></i>' : '<i class="far fa-eye-slash"></i>';
+            });
+
+            // Валидация формы
+            const loginForm = document.getElementById('loginForm');
+
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Сброс ошибок
+                document.querySelectorAll('.error-message').forEach(el => {
+                    el.style.display = 'none';
+                    el.textContent = '';
+                });
+
+                // Валидация полей
+                let isValid = true;
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value.trim();
+
+                if (!email) {
+                    document.getElementById('emailError').textContent = 'Введите email или имя пользователя';
+                    document.getElementById('emailError').style.display = 'block';
+                    isValid = false;
+                }
+
+                if (!password) {
+                    document.getElementById('passwordError').textContent = 'Введите пароль';
+                    document.getElementById('passwordError').style.display = 'block';
+                    isValid = false;
+                } else if (password.length < 6) {
+                    document.getElementById('passwordError').textContent = 'Пароль должен содержать минимум 6 символов';
+                    document.getElementById('passwordError').style.display = 'block';
+                    isValid = false;
+                }
+
+                if (isValid) {
+                    // Показываем индикатор загрузки
+                    document.getElementById('loginText').classList.add('d-none');
+                    document.getElementById('loginSpinner').classList.remove('d-none');
+                    document.getElementById('loginBtn').disabled = true;
+
+                    // Имитация AJAX-запроса (замените на реальный запрос)
+                    setTimeout(() => {
+                        fetch('/api/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                email: email,
+                                password: password,
+                                remember: document.getElementById('rememberMe').checked
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                window.location.href = '/';
+                            } else {
+                                // Показываем ошибку
+                                document.getElementById('loginText').classList.remove('d-none');
+                                document.getElementById('loginSpinner').classList.add('d-none');
+                                document.getElementById('loginBtn').disabled = false;
+
+                                if (data.field === 'email') {
+                                    document.getElementById('emailError').textContent = data.message;
+                                    document.getElementById('emailError').style.display = 'block';
+                                } else if (data.field === 'password') {
+                                    document.getElementById('passwordError').textContent = data.message;
+                                    document.getElementById('passwordError').style.display = 'block';
+                                } else {
+                                    alert(data.message);
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            document.getElementById('loginText').classList.remove('d-none');
+                            document.getElementById('loginSpinner').classList.add('d-none');
+                            document.getElementById('loginBtn').disabled = false;
+                            alert('Произошла ошибка при входе');
+                        });
+                    }, 1000);
+                }
+            });
+
+            // Динамическая проверка полей при вводе
+            document.getElementById('loginEmail').addEventListener('input', function() {
+                if (this.value.trim()) {
+                    document.getElementById('emailError').style.display = 'none';
+                }
+            });
+
+            document.getElementById('loginPassword').addEventListener('input', function() {
+                if (this.value.trim() && this.value.length >= 6) {
+                    document.getElementById('passwordError').style.display = 'none';
+                }
+            });
+        });
+    </script>
 </body>
 </html>
