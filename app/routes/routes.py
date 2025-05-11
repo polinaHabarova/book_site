@@ -9,17 +9,28 @@ from fastapi.responses import HTMLResponse
 from typing import Optional
 from uuid import uuid4
 import os
+from pydantic import BaseModel
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
-
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 templates = Jinja2Templates(directory='app/templates')
+
+
+class RegisterUser(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
+class LoginUser(BaseModel):
+    username: str
+    password: str
 
 
 def get_db():
@@ -37,35 +48,50 @@ def request_1(request: Request):
 
 @router.post('/register', tags=['Auth'])
 def registerUser(
-        username: str = Form(...),
-        email: str = Form(...),
-        password: str = Form(...),
+        user: RegisterUser,
         db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter(User.username == username).first()
+    #users = db.query(User).filter(User.username == users.username).first()
 
-    if user:
-        return 'пользователь уже существует'
+    #if users:
+       # return 'пользователь уже существует'
 
-    new_user = User(username=username, email=email, password=password)
+    new_user = User(username=user.username, email=user.email, password=user.password)
     db.add(new_user)
     db.commit()
 
-    return 'пользователь успешно создан'
+    return JSONResponse(
+        status_code=200,
+        content={
+            "success" : True,
+            "message" : "пользователь успешно создан"
+        }
+    )
 
 
 @router.post('/login', tags=['Auth'])
 def login_user(
-        username: str = Form(...),
-               password: str = Form(...),
-               db: Session = Depends(get_db)
+        user: LoginUser,
+        db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter(User.username == username).first()
+    user = db.query(User).filter(User.username == user.username).first()
 
-    if not user or user.password != password:
-        return 'неверные данные'
+    if not user or user.password != user.password:
+        return JSONResponse(
+            status_code=401,
+            content={
+                "success" : False,
+                "field" : "password",
+                "message": "неверное имя пользователя"
+            }
+        )
 
-    response = JSONResponse(content={'message': 'Вы успешно вошли'})
+    response = JSONResponse(
+        content={
+            'message': 'Вы успешно вошли',
+            "success" : True
+                 }
+    )
     response.set_cookie(key='user_id', value=str(user.id))
 
     return response
@@ -75,17 +101,30 @@ def login_user(
 def auth_page(
         request: Request
 ):
-    return templates.TemplateResponse('index.html', {'request': request})
-
-
-@router.get('/register_form', tags=['Auth'], response_class=HTMLResponse)
-def register_form(
-        request: Request
-):
     return templates.TemplateResponse('register.html', {'request': request})
 
 
-@router.get('/login_form', tags=['Auth'], response_class=HTMLResponse)
+@router.get('/menu', tags=['Auth'], response_class=HTMLResponse)
+def menu(
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    books = db.query(Book).all()
+    books_info = []
+    for book in books:
+        books_info.append(
+            {
+                "id": book.id,
+                "title": book.title,
+                "author": book.author,
+                "image_url": "/static/images/091b46ed2d88493dbcd4ff512e0f48fb.png",
+                "avg_rating": 5
+            })
+
+    return templates.TemplateResponse('index.html', {'request': request, "books": books_info})
+
+
+@router.get('/login', tags=['Auth'], response_class=HTMLResponse)
 def login_form(
         request: Request
 
@@ -96,10 +135,10 @@ def login_form(
 @router.post('/add_book', tags=['Book'])
 def add_book(
         title: str = Form(...),
-             author: str = Form(...),
-             description: Optional[str] = Form(None),
-             image_url: UploadFile = File(None),
-             db: Session = Depends(get_db)
+        author: str = Form(...),
+        description: Optional[str] = Form(None),
+        image_url: UploadFile = File(None),
+        db: Session = Depends(get_db)
 ):
     book = db.query(Book).filter(Book.title == title).first()
 
@@ -148,9 +187,9 @@ def add_review(
 @router.delete('/delete_review', tags=['Review'])
 def delete_review(
         request: Request,
-                  review_id: int = Form(...),
-                  db: Session = Depends(get_db)
-                  ):
+        review_id: int = Form(...),
+        db: Session = Depends(get_db)
+):
     user_id = request.cookies.get('user_id')
 
     if not user_id:
@@ -185,6 +224,7 @@ def list_user_reviews(user_id: int, db: Session = Depends(get_db)):
         )
     return response
 
+
 @router.get("/reviews", tags=['Review'])
 def list_review(
         db: Session = Depends(get_db)
@@ -203,6 +243,8 @@ def list_review(
             }
         )
     return response
+
+
 @router.get("/users", tags=['User'])
 def list_user(
         db: Session = Depends(get_db)
@@ -219,3 +261,28 @@ def list_user(
             }
         )
         return response
+
+@router.get("/books", tags=['Book'])
+def get_books( db: Session = Depends(get_db)):
+    books = db.query(Book).all()
+    return {
+        'books': [
+            {
+                "id": book.id,
+                "title": book.title,
+                "author": book.author,
+                "image_url": book.image_url,
+                "avg_rating": 5
+            }
+            for book in books
+
+        ]
+    }
+
+@router.get("/book/{book_id}", tags=['Book'])
+def book_reviews_page(book_id, request: Request, db: Session = Depends(get_db)):
+    book = db.query(Book).filter(Book.id == book_id).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Книга не найдена")
+    review = db.query(Review).filter(Review.book_id == book_id).all()
+    return templates.TemplateResponse('book_reviews.html', {'request': request, 'book': book, "review": review})

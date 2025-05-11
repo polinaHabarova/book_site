@@ -100,25 +100,8 @@
                                     <span id="loginSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
                                 </button>
 
-                                <div class="text-center mb-3">
-                                    <span class="text-muted">Или войдите через</span>
-                                </div>
-
-                                <div class="row g-2 social-login mb-3">
-                                    <div class="col-6">
-                                        <button type="button" class="btn btn-outline-primary w-100">
-                                            <i class="fab fa-google social-icon"></i> Google
-                                        </button>
-                                    </div>
-                                    <div class="col-6">
-                                        <button type="button" class="btn btn-outline-dark w-100">
-                                            <i class="fab fa-github social-icon"></i> GitHub
-                                        </button>
-                                    </div>
-                                </div>
-
                                 <div class="text-center mt-3">
-                                    <p class="mb-0">Нет аккаунта? <a href="/register" class="text-primary">Зарегистрируйтесь</a></p>
+                                    <p class="mb-0">Нет аккаунта? <a href="/" class="text-primary">Зарегистрируйтесь</a></p>
                                 </div>
                             </form>
                         </div>
@@ -156,10 +139,10 @@
 
                 // Валидация полей
                 let isValid = true;
-                const email = document.getElementById('loginEmail').value.trim();
+                const username = document.getElementById('loginEmail').value.trim();
                 const password = document.getElementById('loginPassword').value.trim();
 
-                if (!email) {
+                if (!username) {
                     document.getElementById('emailError').textContent = 'Введите email или имя пользователя';
                     document.getElementById('emailError').style.display = 'block';
                     isValid = false;
@@ -183,13 +166,13 @@
 
                     // Имитация AJAX-запроса (замените на реальный запрос)
                     setTimeout(() => {
-                        fetch('/api/login', {
+                        fetch('/login', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                email: email,
+                                username: username,
                                 password: password,
                                 remember: document.getElementById('rememberMe').checked
                             })
@@ -197,14 +180,14 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                window.location.href = '/';
+                                window.location.href = '/menu';
                             } else {
                                 // Показываем ошибку
                                 document.getElementById('loginText').classList.remove('d-none');
                                 document.getElementById('loginSpinner').classList.add('d-none');
                                 document.getElementById('loginBtn').disabled = false;
 
-                                if (data.field === 'email') {
+                                if (data.field === 'username') {
                                     document.getElementById('emailError').textContent = data.message;
                                     document.getElementById('emailError').style.display = 'block';
                                 } else if (data.field === 'password') {
