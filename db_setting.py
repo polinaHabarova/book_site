@@ -109,10 +109,13 @@ def get_db():
 
 def add_book():
     with get_db() as db:
-        for book in books:
+        for index, book, in enumerate(books):
             try:
                 book_info = book.split("; ")
-                new_book = Book(title=book_info[1], author=book_info[0])
+                if index + 1 <= 92:
+                    new_book = Book(title=book_info[1], author=book_info[0], image_url=f"/static/images/{index + 1}.jpg")
+                else:
+                    new_book = Book(title=book_info[1], author=book_info[0])
                 db.add(new_book)
             except Exception:
                 pass
@@ -167,6 +170,6 @@ def add_reviews():
                 pass
         db.commit()
 if __name__ == '__main__':
-    #add_book()
-    #add_users()
+    add_book()
+    add_users()
     add_reviews()

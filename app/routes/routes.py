@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import logging
+
+from starlette.responses import RedirectResponse
+
 from app.data_base import sessionLocal
 from sqlalchemy.orm import Session
 from app.models import User, Book, Review
@@ -10,6 +13,7 @@ from typing import Optional
 from uuid import uuid4
 import os
 from pydantic import BaseModel
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -117,7 +121,7 @@ def menu(
                 "id": book.id,
                 "title": book.title,
                 "author": book.author,
-                "image_url": "/static/images/091b46ed2d88493dbcd4ff512e0f48fb.png",
+                "image_url": book.image_url,
                 "avg_rating": 5
             })
 
@@ -137,7 +141,7 @@ def add_book(
         title: str = Form(...),
         author: str = Form(...),
         description: Optional[str] = Form(None),
-        image_url: UploadFile = File(None),
+        image: UploadFile = File(None),
         db: Session = Depends(get_db)
 ):
     book = db.query(Book).filter(Book.title == title).first()
@@ -145,17 +149,20 @@ def add_book(
     if book:
         return 'книга уже существует'
     image_path = None
-    if image_url:
-        ext = image_url.filename.split('.')[-1]
+    if image:
+        ext = image.filename.split('.')[-1]
         filename = f"{uuid4().hex}.{ext}"
         save_path = os.path.join("app", "static", "images", filename)
         with open(save_path, mode="wb") as file:
-            file.write(image_url.file.read())
-        image_path = f"app/static/images/{filename}"
-
+            file.write(image.file.read())
+            print(f"Сохранил файл в {filename}")
+        image_path = f"/static/images/{filename}"
     new_book = Book(title=title, author=author, description=description, image_url=image_path)
     db.add(new_book)
     db.commit()
+    db.refresh(new_book)
+    return RedirectResponse(url= f"/menu", status_code=303)
+
 
 
 @router.post('/add_review', tags=['Review'])
@@ -285,4 +292,22 @@ def book_reviews_page(book_id, request: Request, db: Session = Depends(get_db)):
     if not book:
         raise HTTPException(status_code=404, detail="Книга не найдена")
     review = db.query(Review).filter(Review.book_id == book_id).all()
-    return templates.TemplateResponse('book_reviews.html', {'request': request, 'book': book, "review": review})
+    return templates.TemplateResponse('book_reviews.html', {'request': request, 'book': book, "reviews": review})
+
+@router.get("/review/add/{book_id}", tags=['Review'])
+def add_review_form(book_id, request: Request, db: Session = Depends(get_db)):
+    book = db.query(Book).filter(Book.id == book_id).first()
+    user_id = request.cookies.get("user_id")
+    return templates.TemplateResponse('add_review.html', {'request': request, 'book': book, "user_id" : user_id})
+
+@router.post("/review/add/{book_id}", tags=['Review'])
+def submit_review(book_id, request: Request, rating = Form(...), text = Form(...), user_id = Form(...), db: Session = Depends(get_db)):
+    new_review = Review(book_id = book_id, user_id = user_id, text= text, rating= rating)
+    db.add(new_review)
+    db.commit()
+    db.refresh(new_review)
+    return RedirectResponse(url= f"/book/{book_id}", status_code=303)
+
+@router.get("/add_book_form", tags=['Book'])
+def book_form(request: Request):
+    return templates.TemplateResponse("add_book.html", {'request': request})

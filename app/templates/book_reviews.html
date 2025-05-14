@@ -28,31 +28,22 @@
 
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Последние книги</h1>
-            <a href="/add_book_form" class="btn btn-primary">
-    Добавить книгу
-</a>
+            <h1>Рецензии</h1>
         </div>
 
+        <a href="/review/add/{{ book.id }}" class="btn btn-primary">
+    Добавить рецензию
+</a>
         <div id="books-container" class="row">
             <!-- Динамически загружаемые карточки книг -->
-            {% for book in books %}
+            {% for review in reviews %}
             <div class="col-md-4 mb-4">
-                <div class="card book-card h-100" onclick="location.href='/book/{{book.id}}'">
-                    <img src="{{ book.image_url or '/static/images/default-cover.jpg' }}"
-                         class="card-img-top"
-                         alt="{{ book.title }}"
-                         onerror="this.src='/static/images/default-cover.jpg'">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">{{ book.title }}</h5>
-                        <p class="card-text">Автор: {{ book.author }}</p>
-                        <div class="mt-auto">
-                            <div class="rating">
-                                {% for i in range(1, 6) %}
-                                    <span class="star {% if i <= book.avg_rating|float|round(0,'floor') %}★{% else %}☆{% endif %}"></span>
-                                {% endfor %}
-                            </div>
-                        </div>
+<div            class="card h-100 book-card">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ book.title }}</h5>
+                    <p class="card-text">Рецензия: {{ review.text }}</p>
+                    <p class="card-text">Оценка :{{ review.rating }}</p>
+                    <p class="card-text">Автор :{{ review.user_id }}</p>
                     </div>
                 </div>
             </div>
@@ -60,9 +51,7 @@
         </div>
 
         <div class="text-center my-4">
-            <button id="load-more" class="btn btn-outline-primary">
-                Показать еще
-            </button>
+            <a href="/menu" class="btn btn-secondary">Назад</a>
             <div class="spinner-border loading-spinner text-primary" role="status">
                 <span class="visually-hidden">Загрузка...</span>
             </div>
@@ -119,21 +108,11 @@
                         container.innerHTML += `
                             <div class="col-md-4 mb-4">
                                 <div class="card book-card h-100" data-book-id="${review.book.id}">
-                                    <img src="${review.book.cover_url || '/static/images/default-cover.jpg'}"
-                                         class="card-img-top"
-                                         alt="${review.book.title}"
-                                         onerror="this.src='/static/images/default-cover.jpg'">
-                                    <div class="card-body d-flex flex-column">
+
                                         <h5 class="card-title">${review.book.title}</h5>
                                         <p class="card-text">${review.content.substring(0, 100)}...</p>
-                                        <div class="mt-auto">
-                                            <div class="rating" data-rating="${review.rating}">
-                                                ${'★'.repeat(Math.floor(review.rating / 2))}${'☆'.repeat(5 - Math.floor(review.rating / 2))}
-                                            </div>
-                                            <a href="/book/${review.book.id}" class="btn btn-primary mt-2">Читать книгу</a>
-                                        </div>
                                     </div>
-                                </div>
+
                             </div>
                         `;
                     });
