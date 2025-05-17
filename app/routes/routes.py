@@ -287,22 +287,39 @@ def get_books( db: Session = Depends(get_db)):
     }
 
 @router.get("/book/{book_id}", tags=['Book'])
-def book_reviews_page(book_id, request: Request, db: Session = Depends(get_db)):
+def book_reviews_page(
+        book_id,
+        request: Request,
+        db: Session = Depends(get_db)):
     book = db.query(Book).filter(Book.id == book_id).first()
     if not book:
         raise HTTPException(status_code=404, detail="Книга не найдена")
     review = db.query(Review).filter(Review.book_id == book_id).all()
-    return templates.TemplateResponse('book_reviews.html', {'request': request, 'book': book, "reviews": review})
+    return templates.TemplateResponse('book_reviews.html', {
+        'request': request,
+        'book': book,
+        "reviews": review})
 
 @router.get("/review/add/{book_id}", tags=['Review'])
-def add_review_form(book_id, request: Request, db: Session = Depends(get_db)):
+def add_review_form(
+        book_id,
+        request: Request,
+        db: Session = Depends(get_db)):
     book = db.query(Book).filter(Book.id == book_id).first()
     user_id = request.cookies.get("user_id")
     return templates.TemplateResponse('add_review.html', {'request': request, 'book': book, "user_id" : user_id})
 
 @router.post("/review/add/{book_id}", tags=['Review'])
-def submit_review(book_id, request: Request, rating = Form(...), text = Form(...), user_id = Form(...), db: Session = Depends(get_db)):
-    new_review = Review(book_id = book_id, user_id = user_id, text= text, rating= rating)
+def submit_review(
+        book_id, request: Request,
+        rating = Form(...), text = Form(...),
+        user_id = Form(...),
+        db: Session = Depends(get_db)):
+    new_review = Review(
+        book_id = book_id,
+        user_id = user_id,
+        text= text,
+        rating= rating)
     db.add(new_review)
     db.commit()
     db.refresh(new_review)
